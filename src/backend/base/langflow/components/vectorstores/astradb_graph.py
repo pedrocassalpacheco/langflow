@@ -1,5 +1,5 @@
 import os
-
+import pdb; 
 import orjson
 from astrapy.admin import parse_api_endpoint
 from loguru import logger
@@ -26,6 +26,46 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
     documentation: str = "https://python.langchain.com/api_reference/astradb/graph_vectorstores/langchain_astradb.graph_vectorstores.AstraDBGraphVectorStore.html"
     name = "AstraDBGraph"
     icon: str = "AstraDB"
+
+    VECTORIZE_PROVIDERS_MAPPING = defaultdict(
+        list,
+        {
+            "Azure OpenAI": [
+                "azureOpenAI",
+                ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"],
+            ],
+            "Hugging Face - Dedicated": ["huggingfaceDedicated", ["endpoint-defined-model"]],
+            "Hugging Face - Serverless": [
+                "huggingface",
+                [
+                    "sentence-transformers/all-MiniLM-L6-v2",
+                    "intfloat/multilingual-e5-large",
+                    "intfloat/multilingual-e5-large-instruct",
+                    "BAAI/bge-small-en-v1.5",
+                    "BAAI/bge-base-en-v1.5",
+                    "BAAI/bge-large-en-v1.5",
+                ],
+            ],
+            "Jina AI": [
+                "jinaAI",
+                [
+                    "jina-embeddings-v2-base-en",
+                    "jina-embeddings-v2-base-de",
+                    "jina-embeddings-v2-base-es",
+                    "jina-embeddings-v2-base-code",
+                    "jina-embeddings-v2-base-zh",
+                ],
+            ],
+            "Mistral AI": ["mistral", ["mistral-embed"]],
+            "NVIDIA": ["nvidia", ["NV-Embed-QA"]],
+            "OpenAI": ["openai", ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"]],
+            "Upstage": ["upstageAI", ["solar-embedding-1-large"]],
+            "Voyage AI": [
+                "voyageAI",
+                ["voyage-large-2-instruct", "voyage-law-2", "voyage-code-2", "voyage-large-2", "voyage-2"],
+            ],
+        },
+    )
 
     inputs = [
         SecretStrInput(
@@ -70,12 +110,19 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             info="Optional keyspace within Astra DB to use for the collection.",
             advanced=True,
         ),
+        DropdownInput(
+            name="embedding_choice",
+            display_name="Embedding Model or Astra Vectorize",
+            info="Determines whether to use Astra Vectorize for the collection.",
+            options=["Embedding Model", "Astra Vectorize"],
+            real_time_refresh=True,
+            value="Embedding Model",
+        ),
         HandleInput(
-            name="embedding",
+            name="embedding_model",
             display_name="Embedding Model",
             input_types=["Embeddings"],
-            info="Embedding model.",
-            required=True,
+            info="Allows an embedding model configuration.",
         ),
         DropdownInput(
             name="metric",
@@ -124,6 +171,13 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             advanced=True,
             value=False,
         ),
+        BoolInput(
+            name="build_content_graph",
+            display_name="Build Content Graph",
+            info="Attempts to build content graph based on input data structure. Requires input fron unstructured parser",
+            advanced=True,
+            value=False,
+        ),        
         StrInput(
             name="metadata_indexing_include",
             display_name="Metadata Indexing Include",
@@ -156,8 +210,8 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             name="search_type",
             display_name="Search Type",
             info="Search type to use",
-            options=["Similarity", "Similarity with score threshold", "MMR (Max Marginal Relevance)"],
-            value="Similarity",
+            options=["Similarity", "Similarity with score threshold", "MMR (Max Marginal Relevance)", "Graph Traversal", "MMR (Max Marginal Relevance) Graph Traversal"],
+            value="MMR Graph Traversal Search",
             advanced=True,
         ),
         FloatInput(
@@ -178,7 +232,7 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
     ]
 
     @check_cached_vector_store
-    def build_vector_store(self):
+    def build_vector_store(self, vectorize_options=None):
         try:
             from langchain_astradb import AstraDBGraphVectorStore
             from langchain_astradb.utils.astradb import SetupMode
@@ -198,9 +252,29 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             msg = f"Invalid setup mode: {self.setup_mode}"
             raise ValueError(msg) from e
 
+        if self.embedding_choice == "Embedding Model":
+            embedding_dict = {"embedding": self.embedding_model}
+        else:
+            from astrapy.info import CollectionVectorServiceOptions
+
+            # Fetch values from kwargs if any self.* attributes are None
+            dict_options = vectorize_options or self.build_vectorize_options()
+
+            # Set the embedding dictionary
+            embedding_dict = {
+                "collection_vector_service_options": CollectionVectorServiceOptions.from_dict(
+                    dict_options.get("collection_vector_service_options")
+                ),
+                "collection_embedding_api_key": dict_options.get("collection_embedding_api_key"),
+            }
+
         try:
+            pdb.set_trace()
+            logger.debug(f"*******Initializing Vector Store*******")
+            logger.debug(self.embedding_model)
+            logger.debug(embedding_dict)
             vector_store = AstraDBGraphVectorStore(
-                embedding=self.embedding,
+                embedding=self.embedding_model,
                 collection_name=self.collection_name,
                 metadata_incoming_links_key=self.metadata_incoming_links_key or "incoming_links",
                 token=self.token,
@@ -219,11 +293,13 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
                 collection_indexing_policy=orjson.dumps(self.collection_indexing_policy)
                 if self.collection_indexing_policy
                 else None,
+                **embedding_dict,
             )
         except Exception as e:
             msg = f"Error initializing AstraDBGraphVectorStore: {e}"
             raise ValueError(msg) from e
 
+        logger.debug(f"*******Vector Store initialized: {vector_store.astra_env.collection_name}*******")
         self._add_documents_to_vector_store(vector_store)
 
         return vector_store
@@ -236,6 +312,9 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             else:
                 msg = "Vector Store Inputs must be Data objects."
                 raise TypeError(msg)
+
+        logger.debug("*************Adding documents to the Vector Store****************")
+        logger.debug(documents)
 
         if documents:
             logger.debug(f"Adding {len(documents)} documents to the Vector Store.")
@@ -252,6 +331,12 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             return "similarity_score_threshold"
         if self.search_type == "MMR (Max Marginal Relevance)":
             return "mmr"
+        if self.search_type == "Similarity with score threshold":
+            return "similarity_score_threshold"
+        if self.search_type == "Graph Traversal":
+            return "graph_traversal"
+        if self.search_type == "MMR (Max Marginal Relevance) Graph Traversal":
+            return "mmr_graph_traversal"
         return "similarity"
 
     def _build_search_args(self):
@@ -299,3 +384,413 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             "search_type": self._map_search_type(),
             "search_kwargs": search_args,
         }
+
+#region Handle Vectorize options - todo: this is copied from AstraVectorStoreComponent. It should be moved to a helper class or to a base class
+    def del_fields(self, build_config, field_list):
+            for field in field_list:
+                if field in build_config:
+                    del build_config[field]
+
+            return build_config
+
+    def insert_in_dict(self, build_config, field_name, new_parameters):
+        # Insert the new key-value pair after the found key
+        for new_field_name, new_parameter in new_parameters.items():
+            # Get all the items as a list of tuples (key, value)
+            items = list(build_config.items())
+
+            # Find the index of the key to insert after
+            idx = len(items)
+            for i, (key, _) in enumerate(items):
+                if key == field_name:
+                    idx = i + 1
+                    break
+
+            items.insert(idx, (new_field_name, new_parameter))
+
+            # Clear the original dictionary and update with the modified items
+            build_config.clear()
+            build_config.update(items)
+
+        return build_config
+
+    def update_providers_mapping(self):
+        # If we don't have token or api_endpoint, we can't fetch the list of providers
+        if not self.token or not self.api_endpoint:
+            self.log("Astra DB token and API endpoint are required to fetch the list of Vectorize providers.")
+
+            return self.VECTORIZE_PROVIDERS_MAPPING
+
+        try:
+            self.log("Dynamically updating list of Vectorize providers.")
+
+            # Get the admin object
+            client = DataAPIClient(token=self.token)
+            admin = client.get_admin()
+
+            # Get the embedding providers
+            db_admin = admin.get_database_admin(self.api_endpoint)
+            embedding_providers = db_admin.find_embedding_providers().as_dict()
+
+            vectorize_providers_mapping = {}
+
+            # Map the provider display name to the provider key and models
+            for provider_key, provider_data in embedding_providers["embeddingProviders"].items():
+                display_name = provider_data["displayName"]
+                models = [model["name"] for model in provider_data["models"]]
+
+                vectorize_providers_mapping[display_name] = [provider_key, models]
+
+            # Sort the resulting dictionary
+            return defaultdict(list, dict(sorted(vectorize_providers_mapping.items())))
+        except Exception as e:  # noqa: BLE001
+            self.log(f"Error fetching Vectorize providers: {e}")
+
+            return self.VECTORIZE_PROVIDERS_MAPPING
+
+    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):
+        if field_name == "embedding_choice":
+            if field_value == "Astra Vectorize":
+                self.del_fields(build_config, ["embedding_model"])
+
+                # Update the providers mapping
+                vectorize_providers = self.update_providers_mapping()
+
+                new_parameter = DropdownInput(
+                    name="embedding_provider",
+                    display_name="Embedding Provider",
+                    options=vectorize_providers.keys(),
+                    value="",
+                    required=True,
+                    real_time_refresh=True,
+                ).to_dict()
+
+                self.insert_in_dict(build_config, "embedding_choice", {"embedding_provider": new_parameter})
+            else:
+                self.del_fields(
+                    build_config,
+                    [
+                        "embedding_provider",
+                        "model",
+                        "z_01_model_parameters",
+                        "z_02_api_key_name",
+                        "z_03_provider_api_key",
+                        "z_04_authentication",
+                    ],
+                )
+
+                new_parameter = HandleInput(
+                    name="embedding_model",
+                    display_name="Embedding Model",
+                    input_types=["Embeddings"],
+                    info="Allows an embedding model configuration.",
+                ).to_dict()
+
+                self.insert_in_dict(build_config, "embedding_choice", {"embedding_model": new_parameter})
+
+        elif field_name == "embedding_provider":
+            self.del_fields(
+                build_config,
+                ["model", "z_01_model_parameters", "z_02_api_key_name", "z_03_provider_api_key", "z_04_authentication"],
+            )
+
+            # Update the providers mapping
+            vectorize_providers = self.update_providers_mapping()
+            model_options = vectorize_providers[field_value][1]
+
+            new_parameter = DropdownInput(
+                name="model",
+                display_name="Model",
+                info="The embedding model to use for the selected provider. Each provider has a different set of "
+                "models available (full list at "
+                "https://docs.datastax.com/en/astra-db-serverless/databases/embedding-generation.html):\n\n"
+                f"{', '.join(model_options)}",
+                options=model_options,
+                value=None,
+                required=True,
+                real_time_refresh=True,
+            ).to_dict()
+
+            self.insert_in_dict(build_config, "embedding_provider", {"model": new_parameter})
+
+        elif field_name == "model":
+            self.del_fields(
+                build_config,
+                ["z_01_model_parameters", "z_02_api_key_name", "z_03_provider_api_key", "z_04_authentication"],
+            )
+
+            new_parameter_1 = DictInput(
+                name="z_01_model_parameters",
+                display_name="Model Parameters",
+                is_list=True,
+            ).to_dict()
+
+            new_parameter_2 = MessageTextInput(
+                name="z_02_api_key_name",
+                display_name="API Key Name",
+                info="The name of the embeddings provider API key stored on Astra. "
+                "If set, it will override the 'ProviderKey' in the authentication parameters.",
+            ).to_dict()
+
+            new_parameter_3 = SecretStrInput(
+                load_from_db=False,
+                name="z_03_provider_api_key",
+                display_name="Provider API Key",
+                info="An alternative to the Astra Authentication that passes an API key for the provider "
+                "with each request to Astra DB. "
+                "This may be used when Vectorize is configured for the collection, "
+                "but no corresponding provider secret is stored within Astra's key management system.",
+            ).to_dict()
+
+            new_parameter_4 = DictInput(
+                name="z_04_authentication",
+                display_name="Authentication Parameters",
+                is_list=True,
+            ).to_dict()
+
+            self.insert_in_dict(
+                build_config,
+                "model",
+                {
+                    "z_01_model_parameters": new_parameter_1,
+                    "z_02_api_key_name": new_parameter_2,
+                    "z_03_provider_api_key": new_parameter_3,
+                    "z_04_authentication": new_parameter_4,
+                },
+            )
+
+        return build_config
+
+    def build_vectorize_options(self, **kwargs):
+        for attribute in [
+            "embedding_provider",
+            "model",
+            "z_01_model_parameters",
+            "z_02_api_key_name",
+            "z_03_provider_api_key",
+            "z_04_authentication",
+        ]:
+            if not hasattr(self, attribute):
+                setattr(self, attribute, None)
+
+        # Fetch values from kwargs if any self.* attributes are None
+        provider_value = self.VECTORIZE_PROVIDERS_MAPPING.get(self.embedding_provider, [None])[0] or kwargs.get(
+            "embedding_provider"
+        )
+        model_name = self.model or kwargs.get("model")
+        authentication = {**(self.z_04_authentication or kwargs.get("z_04_authentication", {}))}
+        parameters = self.z_01_model_parameters or kwargs.get("z_01_model_parameters", {})
+
+        # Set the API key name if provided
+        api_key_name = self.z_02_api_key_name or kwargs.get("z_02_api_key_name")
+        provider_key = self.z_03_provider_api_key or kwargs.get("z_03_provider_api_key")
+        if api_key_name:
+            authentication["providerKey"] = api_key_name
+
+        # Set authentication and parameters to None if no values are provided
+        if not authentication:
+            authentication = None
+        if not parameters:
+            parameters = None
+
+        return {
+            # must match astrapy.info.CollectionVectorServiceOptions
+            "collection_vector_service_options": {
+                "provider": provider_value,
+                "modelName": model_name,
+                "authentication": authentication,
+                "parameters": parameters,
+            },
+            "collection_embedding_api_key": provider_key,
+        }
+
+    def update_providers_mapping(self):
+        # If we don't have token or api_endpoint, we can't fetch the list of providers
+        if not self.token or not self.api_endpoint:
+            self.log("Astra DB token and API endpoint are required to fetch the list of Vectorize providers.")
+
+            return self.VECTORIZE_PROVIDERS_MAPPING
+
+        try:
+            self.log("Dynamically updating list of Vectorize providers.")
+
+            # Get the admin object
+            client = DataAPIClient(token=self.token)
+            admin = client.get_admin()
+
+            # Get the embedding providers
+            db_admin = admin.get_database_admin(self.api_endpoint)
+            embedding_providers = db_admin.find_embedding_providers().as_dict()
+
+            vectorize_providers_mapping = {}
+
+            # Map the provider display name to the provider key and models
+            for provider_key, provider_data in embedding_providers["embeddingProviders"].items():
+                display_name = provider_data["displayName"]
+                models = [model["name"] for model in provider_data["models"]]
+
+                vectorize_providers_mapping[display_name] = [provider_key, models]
+
+            # Sort the resulting dictionary
+            return defaultdict(list, dict(sorted(vectorize_providers_mapping.items())))
+        except Exception as e:  # noqa: BLE001
+            self.log(f"Error fetching Vectorize providers: {e}")
+
+            return self.VECTORIZE_PROVIDERS_MAPPING
+
+    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None = None):
+        if field_name == "embedding_choice":
+            if field_value == "Astra Vectorize":
+                self.del_fields(build_config, ["embedding_model"])
+
+                # Update the providers mapping
+                vectorize_providers = self.update_providers_mapping()
+
+                new_parameter = DropdownInput(
+                    name="embedding_provider",
+                    display_name="Embedding Provider",
+                    options=vectorize_providers.keys(),
+                    value="",
+                    required=True,
+                    real_time_refresh=True,
+                ).to_dict()
+
+                self.insert_in_dict(build_config, "embedding_choice", {"embedding_provider": new_parameter})
+            else:
+                self.del_fields(
+                    build_config,
+                    [
+                        "embedding_provider",
+                        "model",
+                        "z_01_model_parameters",
+                        "z_02_api_key_name",
+                        "z_03_provider_api_key",
+                        "z_04_authentication",
+                    ],
+                )
+
+                new_parameter = HandleInput(
+                    name="embedding_model",
+                    display_name="Embedding Model",
+                    input_types=["Embeddings"],
+                    info="Allows an embedding model configuration.",
+                ).to_dict()
+
+                self.insert_in_dict(build_config, "embedding_choice", {"embedding_model": new_parameter})
+
+        elif field_name == "embedding_provider":
+            self.del_fields(
+                build_config,
+                ["model", "z_01_model_parameters", "z_02_api_key_name", "z_03_provider_api_key", "z_04_authentication"],
+            )
+
+            # Update the providers mapping
+            vectorize_providers = self.update_providers_mapping()
+            model_options = vectorize_providers[field_value][1]
+
+            new_parameter = DropdownInput(
+                name="model",
+                display_name="Model",
+                info="The embedding model to use for the selected provider. Each provider has a different set of "
+                "models available (full list at "
+                "https://docs.datastax.com/en/astra-db-serverless/databases/embedding-generation.html):\n\n"
+                f"{', '.join(model_options)}",
+                options=model_options,
+                value=None,
+                required=True,
+                real_time_refresh=True,
+            ).to_dict()
+
+            self.insert_in_dict(build_config, "embedding_provider", {"model": new_parameter})
+
+        elif field_name == "model":
+            self.del_fields(
+                build_config,
+                ["z_01_model_parameters", "z_02_api_key_name", "z_03_provider_api_key", "z_04_authentication"],
+            )
+
+            new_parameter_1 = DictInput(
+                name="z_01_model_parameters",
+                display_name="Model Parameters",
+                is_list=True,
+            ).to_dict()
+
+            new_parameter_2 = MessageTextInput(
+                name="z_02_api_key_name",
+                display_name="API Key Name",
+                info="The name of the embeddings provider API key stored on Astra. "
+                "If set, it will override the 'ProviderKey' in the authentication parameters.",
+            ).to_dict()
+
+            new_parameter_3 = SecretStrInput(
+                load_from_db=False,
+                name="z_03_provider_api_key",
+                display_name="Provider API Key",
+                info="An alternative to the Astra Authentication that passes an API key for the provider "
+                "with each request to Astra DB. "
+                "This may be used when Vectorize is configured for the collection, "
+                "but no corresponding provider secret is stored within Astra's key management system.",
+            ).to_dict()
+
+            new_parameter_4 = DictInput(
+                name="z_04_authentication",
+                display_name="Authentication Parameters",
+                is_list=True,
+            ).to_dict()
+
+            self.insert_in_dict(
+                build_config,
+                "model",
+                {
+                    "z_01_model_parameters": new_parameter_1,
+                    "z_02_api_key_name": new_parameter_2,
+                    "z_03_provider_api_key": new_parameter_3,
+                    "z_04_authentication": new_parameter_4,
+                },
+            )
+
+        return build_config
+
+    def build_vectorize_options(self, **kwargs):
+        for attribute in [
+            "embedding_provider",
+            "model",
+            "z_01_model_parameters",
+            "z_02_api_key_name",
+            "z_03_provider_api_key",
+            "z_04_authentication",
+        ]:
+            if not hasattr(self, attribute):
+                setattr(self, attribute, None)
+
+        # Fetch values from kwargs if any self.* attributes are None
+        provider_value = self.VECTORIZE_PROVIDERS_MAPPING.get(self.embedding_provider, [None])[0] or kwargs.get(
+            "embedding_provider"
+        )
+        model_name = self.model or kwargs.get("model")
+        authentication = {**(self.z_04_authentication or kwargs.get("z_04_authentication", {}))}
+        parameters = self.z_01_model_parameters or kwargs.get("z_01_model_parameters", {})
+
+        # Set the API key name if provided
+        api_key_name = self.z_02_api_key_name or kwargs.get("z_02_api_key_name")
+        provider_key = self.z_03_provider_api_key or kwargs.get("z_03_provider_api_key")
+        if api_key_name:
+            authentication["providerKey"] = api_key_name
+
+        # Set authentication and parameters to None if no values are provided
+        if not authentication:
+            authentication = None
+        if not parameters:
+            parameters = None
+
+        return {
+            # must match astrapy.info.CollectionVectorServiceOptions
+            "collection_vector_service_options": {
+                "provider": provider_value,
+                "modelName": model_name,
+                "authentication": authentication,
+                "parameters": parameters,
+            },
+            "collection_embedding_api_key": provider_key,
+        }
+#endregion  
