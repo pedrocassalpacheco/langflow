@@ -27,46 +27,6 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
     name = "AstraDBGraph"
     icon: str = "AstraDB"
 
-    VECTORIZE_PROVIDERS_MAPPING = defaultdict(
-        list,
-        {
-            "Azure OpenAI": [
-                "azureOpenAI",
-                ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"],
-            ],
-            "Hugging Face - Dedicated": ["huggingfaceDedicated", ["endpoint-defined-model"]],
-            "Hugging Face - Serverless": [
-                "huggingface",
-                [
-                    "sentence-transformers/all-MiniLM-L6-v2",
-                    "intfloat/multilingual-e5-large",
-                    "intfloat/multilingual-e5-large-instruct",
-                    "BAAI/bge-small-en-v1.5",
-                    "BAAI/bge-base-en-v1.5",
-                    "BAAI/bge-large-en-v1.5",
-                ],
-            ],
-            "Jina AI": [
-                "jinaAI",
-                [
-                    "jina-embeddings-v2-base-en",
-                    "jina-embeddings-v2-base-de",
-                    "jina-embeddings-v2-base-es",
-                    "jina-embeddings-v2-base-code",
-                    "jina-embeddings-v2-base-zh",
-                ],
-            ],
-            "Mistral AI": ["mistral", ["mistral-embed"]],
-            "NVIDIA": ["nvidia", ["NV-Embed-QA"]],
-            "OpenAI": ["openai", ["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002"]],
-            "Upstage": ["upstageAI", ["solar-embedding-1-large"]],
-            "Voyage AI": [
-                "voyageAI",
-                ["voyage-large-2-instruct", "voyage-law-2", "voyage-code-2", "voyage-large-2", "voyage-2"],
-            ],
-        },
-    )
-
     inputs = [
         SecretStrInput(
             name="token",
@@ -269,12 +229,9 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             }
 
         try:
-            pdb.set_trace()
             logger.debug(f"*******Initializing Vector Store*******")
-            logger.debug(self.embedding_model)
             logger.debug(embedding_dict)
             vector_store = AstraDBGraphVectorStore(
-                embedding=self.embedding_model,
                 collection_name=self.collection_name,
                 metadata_incoming_links_key=self.metadata_incoming_links_key or "incoming_links",
                 token=self.token,
@@ -299,7 +256,7 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
             msg = f"Error initializing AstraDBGraphVectorStore: {e}"
             raise ValueError(msg) from e
 
-        logger.debug(f"*******Vector Store initialized: {vector_store.astra_env.collection_name}*******")
+        self.log(f"*******Vector Store initialized: {vector_store.astra_env.collection_name}*******")
         self._add_documents_to_vector_store(vector_store)
 
         return vector_store
@@ -418,7 +375,6 @@ class AstraGraphVectorStoreComponent(LCVectorStoreComponent):
         # If we don't have token or api_endpoint, we can't fetch the list of providers
         if not self.token or not self.api_endpoint:
             self.log("Astra DB token and API endpoint are required to fetch the list of Vectorize providers.")
-
             return self.VECTORIZE_PROVIDERS_MAPPING
 
         try:
