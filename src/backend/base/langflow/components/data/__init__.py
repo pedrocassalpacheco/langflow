@@ -6,6 +6,8 @@ from .json_to_data import JSONToDataComponent
 from .sql_executor import SQLExecutorComponent
 from .url import URLComponent
 from .webhook import WebhookComponent
+from .s3_bucket_retriever import S3BucketRetrieverComponent
+from .s3_bucket_uploader import S3BucketUploaderComponent
 
 __all__ = [
     "APIRequestComponent",
@@ -16,4 +18,6 @@ __all__ = [
     "SQLExecutorComponent",
     "URLComponent",
     "WebhookComponent",
+    "S3BucketRetrieverComponent",
+    "S3BucketUploaderComponent",
 ]
