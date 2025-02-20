@@ -1795,7 +1795,9 @@
   "is_component": false,
   "locked": false,
   "name": "Gmail Agent",
-  "tags": ["agents"],
+  "tags": [
+    "agents"
+  ],
   "updated_at": "2025-02-14T09:35:52+00:00",
   "user_id": "baa8aaab-c242-4191-b79d-761bdb5a393c",
   "webhook": false

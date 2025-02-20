@@ -112,6 +112,9 @@ dependencies = [
     "scrapegraph-py>=1.12.0",
     "pydantic-ai>=0.0.19",
     "smolagents>=1.8.0",
+    "gliner>=0.2.16",
+    "keybert>=0.9.0",
+    "langchain-graph-retriever>=0.4.3",
 ]
 
 [tool.uv.sources]

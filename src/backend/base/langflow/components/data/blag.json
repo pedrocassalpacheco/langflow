@@ -1,0 +1,59 @@
+"metadata": {
+    "type": "NarrativeText",
+    "element_id": "b58003825a54c3831cb2223ae1541165",
+    "metadata": {
+        "languages": [
+            "eng"
+        ],
+        "page_number": 1,
+        "parent_id": "7d21c7e77dabea8c12e4a89928e533a1",
+        "filename": "alexander_graham_bell.pdf",
+        "filetype": "application/pdf",
+        "data_source": {
+            "url": "s3://pacp-langflow-bucket/my_pdfs/alexander_graham_bell.pdf",
+            "version": "5e7515524160d825c120d6e2d3e1cc34",
+            "record_locator": {
+                "protocol": "s3",
+                "remote_file_path": "s3://pacp-langflow-bucket/my_pdfs"
+            },
+            "date_created": "1739212111.0",
+            "date_modified": "1739212111.0",
+            "date_processed": "1739937273.2941835"
+        },
+    }
+     "entities": [
+            {
+                "entity": "Bell",
+                "type": "PEOPLE"
+            },
+            {
+                "entity": "3 March 1847",
+                "type": "DATES"
+            },
+            {
+                "entity": "Edinburgh",
+                "type": "PLACES"
+            },
+            {
+                "entity": "Scotland",
+                "type": "PLACES"
+            },
+            {
+                "entity": "2 August 1922",
+                "type": "DATES"
+            },
+            {
+                "entity": "Baddeck",
+                "type": "PLACES"
+            },
+            {
+                "entity": "Nova Scotia",
+                "type": "PLACES"
+            },
+            {
+                "entity": "Canada",
+                "type": "PLACES"
+            }
+        ]
+    }
+}
