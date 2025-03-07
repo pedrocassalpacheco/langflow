@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10, <3.14"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -2855,6 +2856,21 @@ wheels = [
 ]
 
 [[package]]
+name = "graph-retriever"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "immutabledict" },
+    { name = "numpy" },
+    { name = "pytest" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/83/33/248f230877a8de3e4ab655196f51a8180cec83bc5b92ced9f18a271c8dea/graph_retriever-0.5.0.tar.gz", hash = "sha256:ce38c346b0892d15dcc9c170b143419fa917d7c8b6639dfbd747fe1dc36e214b", size = 33435 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8d/58/f7fbf5f5ea733d8c2cca1efdfb3f49591aa74732c06b789472781ee15c59/graph_retriever-0.5.0-py3-none-any.whl", hash = "sha256:6abce84be7fd487173be12b24346927d7acdd228bb85f4c9f3b1c432de0be114", size = 35519 },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3344,6 +3360,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/02/8fec0b9037a368811dba7901035e8e0973ebda308f57f30c42101a16a5f7/ijson-3.3.0-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a716e05547a39b788deaf22725490855337fc36613288aa8ae1601dc8c525553", size = 66770 },
     { url = "https://files.pythonhosted.org/packages/47/23/90c61f978c83647112460047ea0137bde9c7fe26600ce255bb3e17ea7a21/ijson-3.3.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:473f5d921fadc135d1ad698e2697025045cd8ed7e5e842258295012d8a3bc702", size = 64159 },
     { url = "https://files.pythonhosted.org/packages/20/af/aab1a36072590af62d848f03981f1c587ca40a391fc61e418e388d8b0d46/ijson-3.3.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:dd26b396bc3a1e85f4acebeadbf627fa6117b97f4c10b177d5779577c6607744", size = 51095 },
+]
+
+[[package]]
+name = "immutabledict"
+version = "4.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/c5/4240186fbabc58fba41bbe17c5f0cd37ffd4c0b85a5029ab104f946df175/immutabledict-4.2.1.tar.gz", hash = "sha256:d91017248981c72eb66c8ff9834e99c2f53562346f23e7f51e7a5ebcf66a3bcc", size = 6228 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/56/25ca7b848164b7d93dbd5fc97dd7751700c93e324fe854afbeb562ee2f98/immutabledict-4.2.1-py3-none-any.whl", hash = "sha256:c56a26ced38c236f79e74af3ccce53772827cef5c3bce7cab33ff2060f756373", size = 4700 },
 ]
 
 [[package]]
@@ -3862,16 +3887,16 @@ wheels = [
 
 [[package]]
 name = "langchain-astradb"
-version = "0.5.2"
+version = "0.5.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "astrapy" },
     { name = "langchain-community" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/0d/fbb4e5d04d6da0327781de39c6409f32b1c2c1eb9004dac9c638753f3d6d/langchain_astradb-0.5.2.tar.gz", hash = "sha256:ff70c70ec72d6bce7f0fdad5ac561d1c6d1372100fc1e62f135010418ff9a203", size = 50321 }
+sdist = { url = "https://files.pythonhosted.org/packages/c5/0e/6fc78ecc3af34cd044f97c5fd14ebde318920cdb9d2a0106e1ec194c42c9/langchain_astradb-0.5.3.tar.gz", hash = "sha256:c9b05d6288d645416c9e867cb86d90d8ff15a679f50941dd59ffdf18d7dc1d27", size = 52093 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/4e/6a92293669504831a34661aeb897ac5475af1320a39019c9a76ed1215436/langchain_astradb-0.5.2-py3-none-any.whl", hash = "sha256:da1d58f82825bc9505fce300fa6acac59abffd41b4ff435523c81d8dda049e9f", size = 56711 },
+    { url = "https://files.pythonhosted.org/packages/94/93/469c6ef15198148df9309c7426a657c457d63e24ebb4af7182f49b5949d5/langchain_astradb-0.5.3-py3-none-any.whl", hash = "sha256:42b1baf690270d160caf90b6cbdb82e43e4ab224f3b2b6ffcb57bcd7d23bf265", size = 58672 },
 ]
 
 [[package]]
@@ -4051,6 +4076,24 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/73/64/b7322fc150f18904e5715cd64d5ba6571190d4337c40b8e5649d4fc84288/langchain_google_vertexai-2.0.7.tar.gz", hash = "sha256:66d122c34f44fb87845f704f4906ac9c5cc0aa34be65eaf9ff61ba73956e4aee", size = 75141 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/77/85/4773d9fb4fe4712a423d16a1c697d38a3c9a2d96057ece250f80df8ac23a/langchain_google_vertexai-2.0.7-py3-none-any.whl", hash = "sha256:9b89d26472020f19a5708ff216cb131d8c36c06af6efb8589bcde30d2327381f", size = 89869 },
+]
+
+[[package]]
+name = "langchain-graph-retriever"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "backoff" },
+    { name = "graph-retriever" },
+    { name = "immutabledict" },
+    { name = "langchain-core" },
+    { name = "networkx" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8d/9c/a610b921a9dea7adf7cba07dbe2cd492661a85252d0f93fbf5bce9f79689/langchain_graph_retriever-0.5.0.tar.gz", hash = "sha256:2cc8aec85aaa461fed569ee44969a50cceceb35d6838f1133fe8908c2702147d", size = 33516 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/7e/6a16e01e38ce691ef843470e33f753216fd68624410589057148380a6826/langchain_graph_retriever-0.5.0-py3-none-any.whl", hash = "sha256:54744a5652e6fc32a3dec14a54b3e8d99b65dbf72bd85de67814e114c959e591", size = 34200 },
 ]
 
 [[package]]
@@ -4280,6 +4323,7 @@ dependencies = [
     { name = "langchain-google-community" },
     { name = "langchain-google-genai" },
     { name = "langchain-google-vertexai" },
+    { name = "langchain-graph-retriever" },
     { name = "langchain-groq" },
     { name = "langchain-milvus" },
     { name = "langchain-mistralai" },
@@ -4446,7 +4490,7 @@ requires-dist = [
     { name = "kubernetes", specifier = "==31.0.0" },
     { name = "langchain", specifier = "==0.3.10" },
     { name = "langchain-anthropic", specifier = "==0.3.0" },
-    { name = "langchain-astradb", specifier = "==0.5.2" },
+    { name = "langchain-astradb", specifier = "==0.5.3" },
     { name = "langchain-aws", specifier = "==0.2.7" },
     { name = "langchain-chroma", specifier = "==0.1.4" },
     { name = "langchain-cohere", specifier = "==0.3.3" },
@@ -4456,6 +4500,7 @@ requires-dist = [
     { name = "langchain-google-community", specifier = "==2.0.3" },
     { name = "langchain-google-genai", specifier = "==2.0.6" },
     { name = "langchain-google-vertexai", specifier = "==2.0.7" },
+    { name = "langchain-graph-retriever", specifier = "==0.5.0" },
     { name = "langchain-groq", specifier = "==0.2.1" },
     { name = "langchain-milvus", specifier = "==0.1.7" },
     { name = "langchain-mistralai", specifier = "==0.2.3" },
@@ -4519,6 +4564,7 @@ requires-dist = [
     { name = "youtube-transcript-api", specifier = "==0.6.3" },
     { name = "zep-python", specifier = "==2.0.2" },
 ]
+provides-extras = ["deploy", "couchbase", "cassio", "local", "clickhouse-connect", "nv-ingest", "postgresql"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4777,6 +4823,7 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.30.0,<1.0.0" },
     { name = "validators", specifier = ">=0.34.0" },
 ]
+provides-extras = ["postgresql", "deploy", "local", "all"]
 
 [package.metadata.requires-dev]
 dev = [

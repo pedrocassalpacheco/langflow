@@ -32,6 +32,7 @@ __all__ = [
     "CouchbaseVectorStoreComponent",
     "ElasticsearchVectorStoreComponent",
     "FaissVectorStoreComponent",
+    "GraphRAGComponent",
     "HCDVectorStoreComponent",
     "MilvusVectorStoreComponent",
     "MongoVectorStoreComponent",
