@@ -55,7 +55,11 @@ class UserCreate(SQLModel):
     username: str = Field()
     password: str = Field()
     optins: dict[str, Any] | None = Field(
-        default={"github_starred": False, "dialog_dismissed": False, "discord_clicked": False}
+        default={
+            "github_starred": False,
+            "dialog_dismissed": False,
+            "discord_clicked": False,
+        }
     )
 
 
